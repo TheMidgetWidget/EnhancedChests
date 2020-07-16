@@ -1,0 +1,7 @@
+name: EnhancedChests
+version: 1.0
+main: me.lightlord323dev.enhancedchests.Main
+api-version: 1.16
+commands:
+  enhancedchests:
+    aliases: ['ec']
