@@ -22,6 +22,11 @@ public class NBTUtil {
         return this;
     }
 
+    public NBTUtil setBoolean(String key, boolean value) {
+        itemStack.getTag().setBoolean(key, value);
+        return this;
+    }
+
     public NBTUtil setString(String key, String value) {
         itemStack.getTag().setString(key, value);
         return this;
