@@ -1,7 +1,9 @@
 package me.lightlord323dev.enhancedchests.manager;
 
+import com.google.gson.reflect.TypeToken;
 import me.lightlord323dev.enhancedchests.Main;
 import me.lightlord323dev.enhancedchests.api.echest.EnhancedChest;
+import me.lightlord323dev.enhancedchests.api.file.GsonUtil;
 import me.lightlord323dev.enhancedchests.api.manager.Manager;
 import me.lightlord323dev.enhancedchests.item.ECFactory;
 import me.lightlord323dev.enhancedchests.util.NBTUtil;
@@ -11,6 +13,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
@@ -30,6 +33,16 @@ public class EnhancedChestManager implements Manager, Listener {
     public void onPlace(BlockPlaceEvent e) {
         if (ECFactory.isECItem(e.getItemInHand()))
             enhancedChests.add(new EnhancedChest(e.getPlayer().getUniqueId(), ECFactory.getECItemSize(e.getItemInHand()), e.getPlayer().getWorld().getName(), new int[]{e.getBlock().getLocation().getBlockX(), e.getBlock().getLocation().getBlockY(), e.getBlock().getLocation().getBlockZ()}));
+    }
+
+    @EventHandler
+    public void onDestroy(BlockBreakEvent e) {
+        if (e.getBlock().getType() == Material.CHEST) {
+            EnhancedChest enhancedChest = getEnhancedChest(e.getBlock());
+            if (enhancedChest != null) {
+                enhancedChests.remove(enhancedChest.dropInventory());
+            }
+        }
     }
 
     @EventHandler
@@ -74,13 +87,18 @@ public class EnhancedChestManager implements Manager, Listener {
 
     @Override
     public void onLoad() {
-        enhancedChests = new ArrayList<>();
-        // TODO load chests
+        enhancedChests = GsonUtil.loadObject(new TypeToken<List<EnhancedChest>>() {
+        }, Main.getInstance().getEnhancedChestFile().getFile());
+        if (enhancedChests == null)
+            enhancedChests = new ArrayList<>();
+        else
+            enhancedChests.forEach(enhancedChest -> enhancedChest.load());
     }
 
     @Override
     public void onUnload() {
-        // TODO save chests
+        enhancedChests.forEach(enhancedChest -> enhancedChest.unload());
+        GsonUtil.saveObject(enhancedChests, Main.getInstance().getEnhancedChestFile().getFile());
     }
 
     /**

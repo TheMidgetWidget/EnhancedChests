@@ -1,7 +1,9 @@
 package me.lightlord323dev.enhancedchests;
 
+import me.lightlord323dev.enhancedchests.api.file.AbstractFile;
 import me.lightlord323dev.enhancedchests.api.manager.ManagerHandler;
 import me.lightlord323dev.enhancedchests.command.ECCommand;
+import me.lightlord323dev.enhancedchests.file.EnhancedChestFile;
 import org.bukkit.plugin.java.JavaPlugin;
 
 /**
@@ -13,12 +15,18 @@ public class Main extends JavaPlugin {
 
     private ManagerHandler managerHandler;
 
+    // files
+    private AbstractFile enhancedChestFile;
+
     @Override
     public void onEnable() {
         instance = this; // main instance
 
         // commands
         getCommand("enhancedchests").setExecutor(new ECCommand());
+
+        //files
+        initFiles();
 
         // handler
         managerHandler = new ManagerHandler();
@@ -36,5 +44,15 @@ public class Main extends JavaPlugin {
 
     public ManagerHandler getManagerHandler() {
         return managerHandler;
+    }
+
+    public AbstractFile getEnhancedChestFile() {
+        return enhancedChestFile;
+    }
+
+    private void initFiles() {
+        if (!getDataFolder().exists())
+            getDataFolder().mkdir();
+        enhancedChestFile = new EnhancedChestFile(this);
     }
 }

@@ -2,10 +2,12 @@ package me.lightlord323dev.enhancedchests.api.echest;
 
 import me.lightlord323dev.enhancedchests.Main;
 import me.lightlord323dev.enhancedchests.util.ItemBuilder;
+import me.lightlord323dev.enhancedchests.util.ItemSerializer;
 import me.lightlord323dev.enhancedchests.util.LocationUtil;
 import me.lightlord323dev.enhancedchests.util.NBTUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
@@ -23,8 +25,10 @@ public class EnhancedChest {
     private int size;
     private String world;
     private int[] location;
-    private ItemStack[] items;
+    private transient ItemStack[] items;
+    private String[] serializedItems;
     private String serializedLocation;
+    private int lastPage;
 
     public EnhancedChest(UUID owner, int size, String world, int[] location) {
         this.owner = owner;
@@ -33,6 +37,37 @@ public class EnhancedChest {
         this.location = location;
         this.items = new ItemStack[size];
         this.serializedLocation = LocationUtil.serializeLocation(world, location);
+        this.lastPage = (int) Math.ceil(size / 45.0);
+    }
+
+    public void load() {
+        items = new ItemStack[size];
+        for (int i = 0; i < size; i++) {
+            if (serializedItems[i] != null)
+                items[i] = ItemSerializer.itemStackFromBase64(serializedItems[i]);
+            else
+                serializedItems[i] = null;
+        }
+        serializedItems = null;
+    }
+
+    public void unload() {
+        serializedItems = new String[size];
+        for (int i = 0; i < size; i++) {
+            if (items[i] != null) {
+                serializedItems[i] = ItemSerializer.itemStackToBase64(items[i]);
+            } else
+                items[i] = null;
+        }
+    }
+
+    public EnhancedChest dropInventory() {
+        Location loc = new Location(Bukkit.getWorld(world), location[0], location[1], location[2]);
+        for (int i = 0; i < size; i++) {
+            if (items[i] != null)
+                loc.getWorld().dropItemNaturally(loc, items[i]);
+        }
+        return this;
     }
 
     public void openInventory(Player player, int page) {
@@ -52,9 +87,6 @@ public class EnhancedChest {
                 if (items[i] != null)
                     inventory.setItem(i, items[i]);
             }
-            for (int i = size; i < 45; i++) {
-                inventory.setItem(i, filler);
-            }
         } else {
             for (int i = 0; i < 45; i++) {
                 int actualIndex = i + translation;
@@ -65,25 +97,22 @@ public class EnhancedChest {
             }
         }
 
-        int lastPage = (int) Math.ceil(size / 45.0);
-
         // last row
         for (int i = 45; i < 54; i++) {
-            inventory.setItem(i, filler);
+            if (page != lastPage && i > 49) {
+                inventory.setItem(i, nextPage);
+            } else if (page != 1 && i < 49) {
+                inventory.setItem(i, prevPage);
+            } else
+                inventory.setItem(i, filler);
         }
 
         // fill empty space in last page
-        if (page == lastPage && size > 45) {
+        if (page == lastPage) {
             for (int i = (size - translation); i < 45; i++) {
                 inventory.setItem(i, filler);
             }
         }
-
-        if (page != lastPage)
-            inventory.setItem(53, nextPage);
-
-        if (page != 1)
-            inventory.setItem(45, prevPage);
 
         player.openInventory(inventory);
         player.setMetadata("ecInvOpen", new FixedMetadataValue(Main.getInstance(), serializedLocation + "!" + page));
