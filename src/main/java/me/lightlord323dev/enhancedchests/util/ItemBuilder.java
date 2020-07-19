@@ -12,12 +12,12 @@ public class ItemBuilder {
 
     private ItemStack itemStack;
 
-    public ItemBuilder(Material material) {
-        this.itemStack = new ItemStack(material);
+    public ItemBuilder(ItemStack itemStack) {
+        this.itemStack = itemStack;
     }
 
-    public ItemBuilder(Material material, int amt) {
-        this.itemStack = new ItemStack(material, amt);
+    public ItemBuilder(Material material) {
+        this.itemStack = new ItemStack(material);
     }
 
     public ItemBuilder setDisplayName(String displayName) {

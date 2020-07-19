@@ -108,6 +108,8 @@ public class EnhancedChestManager implements Manager, Listener {
      * @return EnhancedChest obj if found, null if not found
      */
     public EnhancedChest getEnhancedChest(Block block) {
+        if (block.getType() != Material.CHEST)
+            return null;
         return enhancedChests.stream().filter(enhancedChest -> enhancedChest.getLocation()[0] == block.getLocation().getBlockX() && enhancedChest.getLocation()[1] == block.getLocation().getBlockY() && enhancedChest.getLocation()[2] == block.getLocation().getBlockZ()).findAny().orElse(null);
     }
 

@@ -14,6 +14,8 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.FixedMetadataValue;
 
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.UUID;
 
 /**
@@ -131,6 +133,27 @@ public class EnhancedChest {
                 items[actualIndex] = inventory.getItem(i);
             }
         }
+    }
+
+    public void sort(Player player) {
+        player.closeInventory();
+        Arrays.sort(items, Comparator.nullsLast(Comparator.comparing(ItemStack::getType)));
+        int toSort = 0;
+        for (int i = 1; i < size; i++) {
+            if (items[toSort] != null && items[i] != null && items[toSort].getAmount() < items[toSort].getMaxStackSize() && items[toSort].getType() == items[i].getType()) {
+                int amt = items[toSort].getMaxStackSize() - items[toSort].getAmount();
+                if (items[i].getAmount() > amt) {
+                    items[toSort].setAmount(64);
+                    items[i].setAmount(items[i].getAmount() - amt);
+                    toSort = i;
+                } else {
+                    items[toSort].setAmount(items[toSort].getAmount() + items[i].getAmount());
+                    items[i] = null;
+                }
+            } else
+                toSort = i;
+        }
+        Arrays.sort(items, Comparator.nullsLast(Comparator.comparing(ItemStack::getType)));
     }
 
     public UUID getOwner() {

@@ -1,8 +1,12 @@
 package me.lightlord323dev.enhancedchests.command;
 
+import me.lightlord323dev.enhancedchests.Main;
+import me.lightlord323dev.enhancedchests.api.echest.EnhancedChest;
 import me.lightlord323dev.enhancedchests.item.ECFactory;
 import me.lightlord323dev.enhancedchests.util.MessageUtil;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -15,7 +19,33 @@ public class ECCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String s, String[] args) {
+
+        if (args.length == 1) {
+            // SORT ENHANCED CHEST
+            if (args[0].equalsIgnoreCase("sort")) {
+
+                if (!(sender instanceof Player))
+                    return true;
+
+                Player player = (Player) sender;
+
+                Block block = player.getTargetBlock(null, 4);
+
+                EnhancedChest enhancedChest = Main.getInstance().getManagerHandler().getEnhancedChestManager().getEnhancedChest(block);
+
+                if (enhancedChest == null) {
+                    MessageUtil.error(player, "You must look at an enhanced chest to sort it!");
+                    return true;
+                }
+
+                enhancedChest.sort(player);
+                MessageUtil.success(player, "Sorting complete.");
+            }
+            return true;
+        }
+
         if (args.length == 3) {
+            // GIVE PLAYER ENHANCED CHEST
             if (args[0].equalsIgnoreCase("give")) {
                 Player target = Bukkit.getPlayer(args[1]);
 
