@@ -40,6 +40,11 @@ public class EnhancedChestManager implements Manager, Listener {
         if (e.getBlock().getType() == Material.CHEST) {
             EnhancedChest enhancedChest = getEnhancedChest(e.getBlock());
             if (enhancedChest != null) {
+                
+                // setDropItems only works for certain versions
+                e.setCancelled(true);
+                e.getBlock().setType(Material.AIR);
+
                 enhancedChests.remove(enhancedChest.dropInventory());
             }
         }

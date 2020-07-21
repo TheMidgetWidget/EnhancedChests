@@ -12,7 +12,7 @@ import org.bukkit.inventory.ItemStack;
 public class ECFactory {
 
     public static ItemStack createECItem(int size) {
-        return new ItemBuilder(new NBTUtil(new ItemStack(Material.CHEST)).setInt("ecSize", size).getItemStack()).setLore(ChatColor.BLUE+"Enhanced chest size: " + ChatColor.GOLD + size).build();
+        return new ItemBuilder(new NBTUtil(new ItemStack(Material.CHEST)).setInt("ecSize", size).getItemStack()).setDisplayName(ChatColor.BLUE+ "Enhanced Chest").setLore(ChatColor.BLUE+"Enhanced chest size: " + ChatColor.GOLD + size).build();
     }
 
     public static boolean isECItem(ItemStack item) {

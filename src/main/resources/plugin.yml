@@ -1,5 +1,5 @@
-name: EnhancedChests
-version: 1.0
+name: ${project.name}
+version: ${project.version}
 main: me.lightlord323dev.enhancedchests.Main
 api-version: 1.16
 commands:

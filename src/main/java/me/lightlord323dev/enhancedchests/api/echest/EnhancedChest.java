@@ -1,6 +1,7 @@
 package me.lightlord323dev.enhancedchests.api.echest;
 
 import me.lightlord323dev.enhancedchests.Main;
+import me.lightlord323dev.enhancedchests.item.ECFactory;
 import me.lightlord323dev.enhancedchests.util.ItemBuilder;
 import me.lightlord323dev.enhancedchests.util.ItemSerializer;
 import me.lightlord323dev.enhancedchests.util.LocationUtil;
@@ -69,6 +70,7 @@ public class EnhancedChest {
             if (items[i] != null)
                 loc.getWorld().dropItemNaturally(loc, items[i]);
         }
+        loc.getWorld().dropItemNaturally(loc, ECFactory.createECItem(size));
         return this;
     }
 
@@ -137,7 +139,9 @@ public class EnhancedChest {
 
     public void sort(Player player) {
         player.closeInventory();
+        // initial sort
         Arrays.sort(items, Comparator.nullsLast(Comparator.comparing(ItemStack::getType)));
+        // grouping stackable items
         int toSort = 0;
         for (int i = 1; i < size; i++) {
             if (items[toSort] != null && items[i] != null && items[toSort].getAmount() < items[toSort].getMaxStackSize() && items[toSort].getType() == items[i].getType()) {
@@ -153,6 +157,7 @@ public class EnhancedChest {
             } else
                 toSort = i;
         }
+        // final sort
         Arrays.sort(items, Comparator.nullsLast(Comparator.comparing(ItemStack::getType)));
     }
 
