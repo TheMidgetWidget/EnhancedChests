@@ -5,7 +5,6 @@ import me.lightlord323dev.enhancedchests.item.ECFactory;
 import me.lightlord323dev.enhancedchests.util.ItemBuilder;
 import me.lightlord323dev.enhancedchests.util.ItemSerializer;
 import me.lightlord323dev.enhancedchests.util.LocationUtil;
-import me.lightlord323dev.enhancedchests.util.NBTUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -80,11 +79,13 @@ public class EnhancedChest {
 
         /* ITEMSTACK UI STUFF */
         ItemStack filler = new ItemBuilder(Material.GRAY_STAINED_GLASS_PANE).setDisplayName(" ").build();
-        filler = new NBTUtil(filler).setBoolean("ecInv", true).getItemStack();
+        filler = Main.getInstance().getNbtUtil().setBoolean(filler, "ecInv", true);
         ItemStack nextPage = new ItemBuilder(Material.GREEN_STAINED_GLASS_PANE).setDisplayName(ChatColor.GREEN + "Next Page").build();
-        nextPage = new NBTUtil(nextPage).setInt("ecInv", page).setString("ecLoc", serializedLocation).getItemStack();
+        nextPage = Main.getInstance().getNbtUtil().setInt(nextPage, "ecInv", page);
+        nextPage = Main.getInstance().getNbtUtil().setString(nextPage, "ecLoc", serializedLocation);
         ItemStack prevPage = new ItemBuilder(Material.RED_STAINED_GLASS_PANE).setDisplayName(ChatColor.RED + "Previous Page").build();
-        prevPage = new NBTUtil(prevPage).setInt("ecInv", page).setString("ecLoc", serializedLocation).getItemStack();
+        prevPage = Main.getInstance().getNbtUtil().setInt(prevPage, "ecInv", page);
+        prevPage = Main.getInstance().getNbtUtil().setString(prevPage, "ecLoc", serializedLocation);
 
         if (size < 45) {
             for (int i = 0; i < size; i++) {

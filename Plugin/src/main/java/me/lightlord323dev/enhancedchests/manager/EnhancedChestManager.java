@@ -6,7 +6,6 @@ import me.lightlord323dev.enhancedchests.api.echest.EnhancedChest;
 import me.lightlord323dev.enhancedchests.api.file.GsonUtil;
 import me.lightlord323dev.enhancedchests.api.manager.Manager;
 import me.lightlord323dev.enhancedchests.item.ECFactory;
-import me.lightlord323dev.enhancedchests.util.NBTUtil;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -40,7 +39,7 @@ public class EnhancedChestManager implements Manager, Listener {
         if (e.getBlock().getType() == Material.CHEST) {
             EnhancedChest enhancedChest = getEnhancedChest(e.getBlock());
             if (enhancedChest != null) {
-                
+
                 // setDropItems only works for certain versions
                 e.setCancelled(true);
                 e.getBlock().setType(Material.AIR);
@@ -68,14 +67,13 @@ public class EnhancedChestManager implements Manager, Listener {
         Player player = (Player) e.getWhoClicked();
         if (e.getClickedInventory() != null && e.getCurrentItem() != null) {
             if (e.getCurrentItem().getType() == Material.GRAY_STAINED_GLASS_PANE) {
-                if (new NBTUtil(e.getCurrentItem()).hasKey("ecInv"))
+                if (Main.getInstance().getNbtUtil().hasKey(e.getCurrentItem(), "ecInv"))
                     e.setCancelled(true);
             } else if (e.getCurrentItem().getType() == Material.GREEN_STAINED_GLASS_PANE || e.getCurrentItem().getType() == Material.RED_STAINED_GLASS_PANE) {
-                NBTUtil nbtUtil = new NBTUtil(e.getCurrentItem());
-                if (nbtUtil.hasKey("ecInv")) {
+                if (Main.getInstance().getNbtUtil().hasKey(e.getCurrentItem(), "ecInv")) {
                     player.closeInventory();
-                    int nextPage = e.getCurrentItem().getType() == Material.GREEN_STAINED_GLASS_PANE ? nbtUtil.getInt("ecInv") + 1 : nbtUtil.getInt("ecInv") - 1;
-                    getEnhancedChest(nbtUtil.getString("ecLoc")).openInventory(player, nextPage);
+                    int currentPage = Main.getInstance().getNbtUtil().getInt(e.getCurrentItem(), "ecInv"), nextPage = e.getCurrentItem().getType() == Material.GREEN_STAINED_GLASS_PANE ? currentPage + 1 : currentPage - 1;
+                    getEnhancedChest(Main.getInstance().getNbtUtil().getString(e.getCurrentItem(), "ecLoc")).openInventory(player, nextPage);
                 }
             }
         }

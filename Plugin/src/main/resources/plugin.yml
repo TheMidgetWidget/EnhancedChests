@@ -1,4 +1,4 @@
-name: ${project.name}
+name: ${project.build.finalName}
 version: ${project.version}
 main: me.lightlord323dev.enhancedchests.Main
 api-version: 1.16
