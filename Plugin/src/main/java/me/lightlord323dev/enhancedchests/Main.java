@@ -5,6 +5,9 @@ import me.lightlord323dev.enhancedchests.api.file.AbstractFile;
 import me.lightlord323dev.enhancedchests.api.manager.ManagerHandler;
 import me.lightlord323dev.enhancedchests.command.ECCommand;
 import me.lightlord323dev.enhancedchests.file.EnhancedChestFile;
+import me.lightlord323dev.enhancedchests.v1_13_R2.NBTUtil_1_13_R2;
+import me.lightlord323dev.enhancedchests.v1_14_R1.NBTUtil_1_14_R1;
+import me.lightlord323dev.enhancedchests.v1_15_R1.NBTUtil_1_15_R1;
 import me.lightlord323dev.enhancedchests.v1_16_R1.NBTUtil_1_16_R1;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -81,7 +84,17 @@ public class Main extends JavaPlugin {
             case "v1_16_R1":
                 nbtUtil = new NBTUtil_1_16_R1();
                 return true;
+            case "v1_15_R1":
+                nbtUtil = new NBTUtil_1_15_R1();
+                return true;
+            case "v1_14_R1":
+                nbtUtil = new NBTUtil_1_14_R1();
+                return true;
+            case "v1_13_R2":
+                nbtUtil = new NBTUtil_1_13_R2();
+                return true;
+            default:
+                return false;
         }
-        return false;
     }
 }
