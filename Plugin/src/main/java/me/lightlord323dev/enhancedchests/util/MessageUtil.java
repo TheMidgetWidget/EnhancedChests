@@ -1,5 +1,6 @@
 package me.lightlord323dev.enhancedchests.util;
 
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 
@@ -21,4 +22,9 @@ public class MessageUtil {
     public static void success(CommandSender target, String message) {
         target.sendMessage(PREFIX + ChatColor.GREEN + message);
     }
+
+    public static void log(String message) {
+        Bukkit.getLogger().info(PREFIX + ChatColor.RESET + message);
+    }
+
 }

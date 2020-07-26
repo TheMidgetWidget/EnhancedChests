@@ -6,6 +6,7 @@ import me.lightlord323dev.enhancedchests.api.echest.EnhancedChest;
 import me.lightlord323dev.enhancedchests.api.file.GsonUtil;
 import me.lightlord323dev.enhancedchests.api.manager.Manager;
 import me.lightlord323dev.enhancedchests.item.ECFactory;
+import me.lightlord323dev.enhancedchests.util.MessageUtil;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -20,6 +21,9 @@ import org.bukkit.event.player.PlayerInteractEvent;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by Luda on 7/16/2020.
@@ -54,8 +58,13 @@ public class EnhancedChestManager implements Manager, Listener {
         if (e.getAction() == Action.RIGHT_CLICK_BLOCK && e.getClickedBlock().getType() == Material.CHEST) {
             EnhancedChest enhancedChest = getEnhancedChest(e.getClickedBlock());
             if (enhancedChest != null) {
-                e.setCancelled(true);
-                enhancedChest.openInventory(e.getPlayer(), 1);
+                if (isEnhancedChestAvailable(e.getClickedBlock())) {
+                    e.setCancelled(true);
+                    enhancedChest.openInventory(e.getPlayer(), 1);
+                    enhancedChest.setAvailable(false);
+                } else {
+                    MessageUtil.error(e.getPlayer(), "Another player is using this enhanced chest.");
+                }
             }
         }
     }
@@ -83,7 +92,9 @@ public class EnhancedChestManager implements Manager, Listener {
     public void onInventoryClose(InventoryCloseEvent e) {
         if (e.getPlayer().hasMetadata("ecInvOpen")) {
             String[] data = e.getPlayer().getMetadata("ecInvOpen").get(0).asString().split("!");
-            getEnhancedChest(data[0]).saveInventory(e.getInventory(), Integer.parseInt(data[1]));
+            EnhancedChest enhancedChest = getEnhancedChest(data[0]);
+            enhancedChest.saveInventory(e.getInventory(), Integer.parseInt(data[1]));
+            enhancedChest.setAvailable(true);
             e.getPlayer().removeMetadata("ecInvOpen", Main.getInstance());
         }
     }
@@ -96,6 +107,13 @@ public class EnhancedChestManager implements Manager, Listener {
             enhancedChests = new ArrayList<>();
         else
             enhancedChests.forEach(enhancedChest -> enhancedChest.load());
+        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(4);
+        executorService.scheduleAtFixedRate(() -> {
+            MessageUtil.log("Saving enhanced chest data...");
+            onUnload();
+            enhancedChests.forEach(enhancedChest -> enhancedChest.setSerializedItems(null));
+            MessageUtil.log("Enhanced chest data saved!");
+        }, 0, 15 * 60, TimeUnit.SECONDS);
     }
 
     @Override
@@ -134,5 +152,14 @@ public class EnhancedChestManager implements Manager, Listener {
      */
     public EnhancedChest getEnhancedChest(String serializedLocation) {
         return enhancedChests.stream().filter(enhancedChest -> enhancedChest.getSerializedLocation().equalsIgnoreCase(serializedLocation)).findAny().orElse(null);
+    }
+
+    /**
+     * checks if enhanced chest is available for player to open
+     * @param block
+     * @return true if available, false if not available
+     */
+    public boolean isEnhancedChestAvailable(Block block) {
+        return !block.hasMetadata("ecOpen");
     }
 }

@@ -9,6 +9,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -61,6 +62,16 @@ public class EnhancedChest {
             } else
                 items[i] = null;
         }
+    }
+
+    public void setAvailable(boolean state) {
+        Block block = Bukkit.getWorld(world).getBlockAt(location[0], location[1], location[2]);
+        if (state) {
+            if (block.hasMetadata("ecOpen"))
+                block.removeMetadata("ecOpen", Main.getInstance());
+        } else
+            block.setMetadata("ecOpen", new FixedMetadataValue(Main.getInstance(), '0'));
+
     }
 
     public EnhancedChest dropInventory() {
@@ -180,5 +191,9 @@ public class EnhancedChest {
 
     public String getSerializedLocation() {
         return serializedLocation;
+    }
+
+    public void setSerializedItems(String[] serializedItems) {
+        this.serializedItems = serializedItems;
     }
 }

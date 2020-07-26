@@ -1,7 +1,7 @@
 name: ${project.build.finalName}
 version: ${project.version}
 main: me.lightlord323dev.enhancedchests.Main
-api-version: 1.16
+api-version: 1.13
 commands:
   enhancedchests:
     aliases: ['ec']
