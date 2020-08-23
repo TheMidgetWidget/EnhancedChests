@@ -29,6 +29,7 @@ public class EnhancedChest {
     private String world;
     private int[] location;
     private transient ItemStack[] items;
+    private transient long lastUsed;
     private String[] serializedItems;
     private String serializedLocation;
     private int lastPage;
@@ -41,6 +42,7 @@ public class EnhancedChest {
         this.items = new ItemStack[size];
         this.serializedLocation = LocationUtil.serializeLocation(world, location);
         this.lastPage = (int) Math.ceil(size / 45.0);
+        this.lastUsed = System.currentTimeMillis();
     }
 
     public void load() {
@@ -52,6 +54,7 @@ public class EnhancedChest {
                 serializedItems[i] = null;
         }
         serializedItems = null;
+        this.lastUsed = System.currentTimeMillis();
     }
 
     public void unload() {
@@ -132,6 +135,7 @@ public class EnhancedChest {
 
         player.openInventory(inventory);
         player.setMetadata("ecInvOpen", new FixedMetadataValue(Main.getInstance(), serializedLocation + "!" + page));
+        this.lastUsed = System.currentTimeMillis();
     }
 
     public void saveInventory(Inventory inventory, int page) {
@@ -171,6 +175,7 @@ public class EnhancedChest {
         }
         // final sort
         Arrays.sort(items, Comparator.nullsLast(Comparator.comparing(ItemStack::getType)));
+        this.lastUsed = System.currentTimeMillis();
     }
 
     public UUID getOwner() {
@@ -195,5 +200,9 @@ public class EnhancedChest {
 
     public void setSerializedItems(String[] serializedItems) {
         this.serializedItems = serializedItems;
+    }
+
+    public long getLastUsed() {
+        return lastUsed;
     }
 }

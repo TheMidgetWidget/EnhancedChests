@@ -1,10 +1,8 @@
 package me.lightlord323dev.enhancedchests;
 
 import me.lightlord323dev.enhancedchests.api.NBTUtil;
-import me.lightlord323dev.enhancedchests.api.file.AbstractFile;
 import me.lightlord323dev.enhancedchests.api.manager.ManagerHandler;
 import me.lightlord323dev.enhancedchests.command.ECCommand;
-import me.lightlord323dev.enhancedchests.file.EnhancedChestFile;
 import me.lightlord323dev.enhancedchests.v1_13_R2.NBTUtil_1_13_R2;
 import me.lightlord323dev.enhancedchests.v1_14_R1.NBTUtil_1_14_R1;
 import me.lightlord323dev.enhancedchests.v1_15_R1.NBTUtil_1_15_R1;
@@ -22,9 +20,6 @@ public class Main extends JavaPlugin {
     private static Main instance;
 
     private ManagerHandler managerHandler;
-
-    // files
-    private AbstractFile enhancedChestFile;
 
     // nbt util
     private NBTUtil nbtUtil;
@@ -64,10 +59,6 @@ public class Main extends JavaPlugin {
         return managerHandler;
     }
 
-    public AbstractFile getEnhancedChestFile() {
-        return enhancedChestFile;
-    }
-
     public NBTUtil getNbtUtil() {
         return nbtUtil;
     }
@@ -75,7 +66,6 @@ public class Main extends JavaPlugin {
     private void initFiles() {
         if (!getDataFolder().exists())
             getDataFolder().mkdir();
-        enhancedChestFile = new EnhancedChestFile(this);
     }
 
     private boolean initNbtUtil() {

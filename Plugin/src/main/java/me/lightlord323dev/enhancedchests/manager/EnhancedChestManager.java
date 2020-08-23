@@ -3,10 +3,13 @@ package me.lightlord323dev.enhancedchests.manager;
 import com.google.gson.reflect.TypeToken;
 import me.lightlord323dev.enhancedchests.Main;
 import me.lightlord323dev.enhancedchests.api.echest.EnhancedChest;
+import me.lightlord323dev.enhancedchests.api.file.AbstractFile;
 import me.lightlord323dev.enhancedchests.api.file.GsonUtil;
 import me.lightlord323dev.enhancedchests.api.manager.Manager;
 import me.lightlord323dev.enhancedchests.item.ECFactory;
+import me.lightlord323dev.enhancedchests.util.LocationUtil;
 import me.lightlord323dev.enhancedchests.util.MessageUtil;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -14,11 +17,13 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -31,41 +36,78 @@ import java.util.concurrent.TimeUnit;
 public class EnhancedChestManager implements Manager, Listener {
 
     private List<EnhancedChest> enhancedChests;
+    private ScheduledExecutorService executorService;
 
     @EventHandler
     public void onPlace(BlockPlaceEvent e) {
-        if (ECFactory.isECItem(e.getItemInHand()))
-            enhancedChests.add(new EnhancedChest(e.getPlayer().getUniqueId(), ECFactory.getECItemSize(e.getItemInHand()), e.getPlayer().getWorld().getName(), new int[]{e.getBlock().getLocation().getBlockX(), e.getBlock().getLocation().getBlockY(), e.getBlock().getLocation().getBlockZ()}));
+        if (ECFactory.isECItem(e.getItemInHand())) {
+            EnhancedChest enhancedChest = new EnhancedChest(e.getPlayer().getUniqueId(), ECFactory.getECItemSize(e.getItemInHand()), e.getPlayer().getWorld().getName(), new int[]{e.getBlock().getLocation().getBlockX(), e.getBlock().getLocation().getBlockY(), e.getBlock().getLocation().getBlockZ()});
+            saveEnhancedChestData(enhancedChest);
+            enhancedChests.add(enhancedChest);
+        }
     }
 
     @EventHandler
     public void onDestroy(BlockBreakEvent e) {
         if (e.getBlock().getType() == Material.CHEST) {
-            EnhancedChest enhancedChest = getEnhancedChest(e.getBlock());
-            if (enhancedChest != null) {
+            loadEnhancedChestData(e.getBlock(), () -> {
+                EnhancedChest enhancedChest = getEnhancedChest(e.getBlock());
+                if (enhancedChest != null) {
 
-                // setDropItems only works for certain versions
-                e.setCancelled(true);
-                e.getBlock().setType(Material.AIR);
+                    // setDropItems only works for certain versions
+                    e.setCancelled(true);
+                    e.getBlock().setType(Material.AIR);
 
-                enhancedChests.remove(enhancedChest.dropInventory());
-            }
+                    enhancedChest.dropInventory();
+                    executorService.schedule(() -> {
+                        File file = new AbstractFile(Main.getInstance(), enhancedChest.getSerializedLocation() + ".json", false, false).getFile();
+                        if (file != null) {
+                            file.delete();
+                        }
+                        enhancedChests.remove(enhancedChest);
+                    }, 0, TimeUnit.MILLISECONDS);
+                }
+            });
         }
+    }
+
+    @EventHandler
+    public void onExplode(BlockExplodeEvent e) {
+        e.blockList().forEach(block -> {
+            if (block.getType() == Material.CHEST) {
+                loadEnhancedChestData(block, () -> {
+                    EnhancedChest enhancedChest = getEnhancedChest(block);
+                    if (enhancedChest != null) {
+                        enhancedChest.dropInventory();
+                        executorService.schedule(() -> {
+                            File file = new AbstractFile(Main.getInstance(), enhancedChest.getSerializedLocation() + ".json", false, false).getFile();
+                            if (file != null) {
+                                file.delete();
+                            }
+                            enhancedChests.remove(enhancedChest);
+                        }, 0, TimeUnit.MILLISECONDS);
+                    }
+
+                });
+            }
+        });
     }
 
     @EventHandler
     public void onOpen(PlayerInteractEvent e) {
         if (e.getAction() == Action.RIGHT_CLICK_BLOCK && e.getClickedBlock().getType() == Material.CHEST) {
-            EnhancedChest enhancedChest = getEnhancedChest(e.getClickedBlock());
-            if (enhancedChest != null) {
-                if (isEnhancedChestAvailable(e.getClickedBlock())) {
-                    e.setCancelled(true);
-                    enhancedChest.openInventory(e.getPlayer(), 1);
-                    enhancedChest.setAvailable(false);
-                } else {
-                    MessageUtil.error(e.getPlayer(), "Another player is using this enhanced chest.");
+            loadEnhancedChestData(e.getClickedBlock(), () -> {
+                EnhancedChest enhancedChest = getEnhancedChest(e.getClickedBlock());
+                if (enhancedChest != null) {
+                    if (isEnhancedChestAvailable(e.getClickedBlock())) {
+                        e.setCancelled(true);
+                        enhancedChest.openInventory(e.getPlayer(), 1);
+                        enhancedChest.setAvailable(false);
+                    } else {
+                        MessageUtil.error(e.getPlayer(), "Another player is using this enhanced chest.");
+                    }
                 }
-            }
+            });
         }
     }
 
@@ -101,25 +143,23 @@ public class EnhancedChestManager implements Manager, Listener {
 
     @Override
     public void onLoad() {
-        enhancedChests = GsonUtil.loadObject(new TypeToken<List<EnhancedChest>>() {
-        }, Main.getInstance().getEnhancedChestFile().getFile());
-        if (enhancedChests == null)
-            enhancedChests = new ArrayList<>();
-        else
-            enhancedChests.forEach(enhancedChest -> enhancedChest.load());
-        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(4);
+        this.enhancedChests = new ArrayList<>();
+        executorService = Executors.newScheduledThreadPool(4);
         executorService.scheduleAtFixedRate(() -> {
             MessageUtil.log("Saving enhanced chest data...");
             onUnload();
             enhancedChests.forEach(enhancedChest -> enhancedChest.setSerializedItems(null));
             MessageUtil.log("Enhanced chest data saved!");
-        }, 0, 15 * 60, TimeUnit.SECONDS);
+            enhancedChests.stream().filter(enhancedChest -> System.currentTimeMillis() - enhancedChest.getLastUsed() >= 300000).forEach(enhancedChest -> unloadAndSaveEnhancedChestData(enhancedChest));
+        }, 0, 5, TimeUnit.MINUTES);
     }
 
     @Override
     public void onUnload() {
-        enhancedChests.forEach(enhancedChest -> enhancedChest.unload());
-        GsonUtil.saveObject(enhancedChests, Main.getInstance().getEnhancedChestFile().getFile());
+        enhancedChests.forEach(enhancedChest -> {
+            enhancedChest.unload();
+            GsonUtil.saveObject(enhancedChests, new AbstractFile(Main.getInstance(), enhancedChest.getSerializedLocation() + ".json", false, true).getFile());
+        });
     }
 
     /**
@@ -128,6 +168,7 @@ public class EnhancedChestManager implements Manager, Listener {
      * @param block
      * @return EnhancedChest obj if found, null if not found
      */
+
     public EnhancedChest getEnhancedChest(Block block) {
         if (block.getType() != Material.CHEST)
             return null;
@@ -156,10 +197,93 @@ public class EnhancedChestManager implements Manager, Listener {
 
     /**
      * checks if enhanced chest is available for player to open
+     *
      * @param block
      * @return true if available, false if not available
      */
     public boolean isEnhancedChestAvailable(Block block) {
         return !block.hasMetadata("ecOpen");
+    }
+
+
+    /**
+     * loads chest data into memory
+     *
+     * @param block the chest to be loaded
+     */
+    private void loadEnhancedChestData(Block block) {
+        if (getEnhancedChest(block) == null) {
+            this.executorService.schedule(() -> {
+                File file = new AbstractFile(Main.getInstance(), LocationUtil.serializeLocation(block.getLocation()) + ".json", false, false).getFile();
+                if (file == null)
+                    return;
+                EnhancedChest[] arr = GsonUtil.loadObject(new TypeToken<EnhancedChest[]>() {
+                }, file);
+                if (arr == null)
+                    return;
+                EnhancedChest enhancedChest = arr[0];
+                enhancedChest.load();
+                enhancedChests.add(enhancedChest);
+            }, 0, TimeUnit.MILLISECONDS);
+        }
+    }
+
+    /**
+     * loads chest data into memory and runs runnable after loading
+     *
+     * @param block the chest to be loaded
+     */
+    private void loadEnhancedChestData(Block block, Runnable runnable) {
+
+        this.executorService.schedule(() -> {
+            if (getEnhancedChest(block) == null) {
+                File file = new AbstractFile(Main.getInstance(), LocationUtil.serializeLocation(block.getLocation()) + ".json", false, false).getFile();
+                if (file != null) {
+
+                    EnhancedChest[] arr = GsonUtil.loadObject(new TypeToken<EnhancedChest[]>() {
+                    }, file);
+                    if (arr != null) {
+                        EnhancedChest enhancedChest = arr[0];
+                        enhancedChest.load();
+                        enhancedChests.add(enhancedChest);
+                    }
+                }
+            }
+            Bukkit.getScheduler().scheduleSyncDelayedTask(Main.getInstance(), runnable);
+        }, 0, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * loads chest data into memory and opens the chest for player if found
+     *
+     * @param block the chest to be loaded
+     */
+    private void loadEnhancedChestData(Block block, Player player) {
+        if (getEnhancedChest(block) == null) {
+            this.executorService.schedule(() -> {
+                File file = new AbstractFile(Main.getInstance(), LocationUtil.serializeLocation(block.getLocation()) + ".json", false, false).getFile();
+                if (file == null)
+                    return;
+                EnhancedChest[] arr = GsonUtil.loadObject(new TypeToken<EnhancedChest[]>() {
+                }, file);
+                if (arr == null)
+                    return;
+                EnhancedChest enhancedChest = arr[0];
+                enhancedChest.load();
+                enhancedChests.add(enhancedChest);
+                enhancedChest.setAvailable(false);
+                Bukkit.getScheduler().scheduleSyncDelayedTask(Main.getInstance(), () -> enhancedChest.openInventory(player, 1));
+            }, 0, TimeUnit.MILLISECONDS);
+        }
+    }
+
+    private void unloadAndSaveEnhancedChestData(EnhancedChest enhancedChest) {
+        enhancedChest.unload();
+        saveEnhancedChestData(enhancedChest);
+        this.enhancedChests.remove(enhancedChest);
+    }
+
+    private void saveEnhancedChestData(EnhancedChest enhancedChest) {
+        GsonUtil.saveObject(enhancedChest, new AbstractFile(Main.getInstance(), enhancedChest.getSerializedLocation() + ".json", false, true).getFile());
     }
 }

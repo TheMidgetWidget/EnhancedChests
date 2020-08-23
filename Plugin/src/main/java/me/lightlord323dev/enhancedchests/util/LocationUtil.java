@@ -1,9 +1,15 @@
 package me.lightlord323dev.enhancedchests.util;
 
+import org.bukkit.Location;
+
 /**
  * Created by Luda on 7/17/2020.
  */
 public class LocationUtil {
+
+    public static String serializeLocation(Location location) {
+        return location.getWorld().getName() + ";" + location.getBlockX() + ";" + location.getBlockY() + ";" + location.getBlockZ();
+    }
 
     public static String serializeLocation(String world, int[] location) {
         return world + ";" + location[0] + ";" + location[1] + ";" + location[2];
